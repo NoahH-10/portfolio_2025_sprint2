@@ -1,16 +1,8 @@
-import Player from './Player.js';
+import GameObject from './GameObject.js';
 
-class Fish extends Player {
+class PlayerOne extends GameObject {
     constructor(data = null) {
         super(data);
-    }
-
-    update() {
-        super.update();
-    }
-
-    resize() {
-        super.resize();
     }
 
     handleKeyDown({ keyCode }) {
@@ -57,6 +49,7 @@ class Fish extends Player {
                 break;
         }
     }
+
 }
 
-export default Fish;
+export default PlayerOne;

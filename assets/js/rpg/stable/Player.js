@@ -1,9 +1,11 @@
 import GameEnv from './GameEnv.js';
+import GameObject from './GameObject.js';
 
 // Define non-mutable constants as defaults
 const SCALE_FACTOR = 25; // 1/nth of the height of the canvas
 const STEP_FACTOR = 100; // 1/nth, or N steps up and across the canvas
 const ANIMATION_RATE = 1; // 1/nth of the frame rate
+const INIT_POSITION = { x: 0, y: 0 };
 
 /**
  * Player is a dynamic class that manages the data and events for a player object.
@@ -38,21 +40,23 @@ const ANIMATION_RATE = 1; // 1/nth of the frame rate
  * @method handleKeyDown - Handles key down events to change the player's velocity.
  * @method handleKeyUp - Handles key up events to stop the player's velocity.
  */
-class Player {
+class Player extends GameObject{
     /**
      * The constructor method is called when a new Player object is created.
      * 
      * @param {Object|null} data - The sprite data for the player. If null, a default red square is used.
      */
     constructor(data = null) {
+        super(data);
         // Initialize the player's scale based on the game environment
         this.scale = { width: GameEnv.innerWidth, height: GameEnv.innerHeight };
-
+        
         // Check if sprite data is provided
-        if (data) {
+        if (data && data.src) {
             this.scaleFactor = data.SCALE_FACTOR || SCALE_FACTOR;
             this.stepFactor = data.STEP_FACTOR || STEP_FACTOR;
             this.animationRate = data.ANIMATION_RATE || ANIMATION_RATE;
+            this.position = data.INIT_POSITION || INIT_POSITION;
     
             // Load the sprite sheet
             this.spriteSheet = new Image();
@@ -68,15 +72,13 @@ class Player {
             this.scaleFactor = SCALE_FACTOR;
             this.stepFactor = STEP_FACTOR;
             this.animationRate = ANIMATION_RATE;
+            this.position = INIT_POSITION;
+
             // No sprite sheet for default
             this.spriteSheet = null;
         }
 
-        // Set the initial size of the player
-        this.size = GameEnv.innerHeight / this.scaleFactor;
-
         // Initialize the player's position and velocity
-        this.position = { x: 0, y: GameEnv.innerHeight - this.size };
         this.velocity = { x: 0, y: 0 };
 
         // Set the initial size and velocity of the player
@@ -125,23 +127,35 @@ class Player {
             // Sprite Sheet frame size: pixels = total pixels / total frames
             const frameWidth = this.spriteData.pixels.width / this.spriteData.orientation.columns;
             const frameHeight = this.spriteData.pixels.height / this.spriteData.orientation.rows;
-
+    
             // Sprite Sheet direction data source (e.g., front, left, right, back)
             const directionData = this.spriteData[this.direction];
-
+    
             // Sprite Sheet x and y declarations to store coordinates of current frame
             let frameX, frameY;
             // Sprite Sheet x and y current frame: coordinate = (index) * (pixels)
             frameX = (directionData.start + this.frameIndex) * frameWidth;
             frameY = directionData.row * frameHeight;
-
+    
+            // Set up the canvas dimensions and styles
+            this.canvas.width = frameWidth;
+            this.canvas.height = frameHeight;
+            this.canvas.style.width = `${this.width}px`;
+            this.canvas.style.height = `${this.height}px`;
+            this.canvas.style.position = 'absolute';
+            this.canvas.style.left = `${this.position.x}px`;
+            this.canvas.style.top = `${this.position.y+GameEnv.top}px`;
+    
+            // Clear the canvas before drawing
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    
             // Draw the current frame of the sprite sheet
-            GameEnv.ctx.drawImage(
+            this.ctx.drawImage(
                 this.spriteSheet,
                 frameX, frameY, frameWidth, frameHeight, // Source rectangle
-                this.position.x, this.position.y, this.width, this.height // Destination rectangle
+                0, 0, this.canvas.width, this.canvas.height // Destination rectangle
             );
-
+    
             // Update the frame index for animation at a slower rate
             this.frameCounter++;
             if (this.frameCounter % this.animationRate === 0) {
@@ -149,11 +163,11 @@ class Player {
             }
         } else {
             // Draw default red square
-            GameEnv.ctx.fillStyle = 'red';
-            GameEnv.ctx.fillRect(this.position.x, this.position.y, this.width, this.height);
+            this.ctx.fillStyle = 'red';
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         }
     }
-
+    
     /**
      * Updates the player's position and ensures it stays within the canvas boundaries.
      * 
@@ -225,6 +239,8 @@ class Player {
     handleKeyUp({ keyCode }) {
         throw new Error('Method "handleKeyUp()" must be implemented');
     }
+
+ 
 }
 
 export default Player;
